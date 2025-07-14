@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Counterfeit Detection - Prototype</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .wallet-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .wallet-status {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .section {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            color: #2a5298;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .result {
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .result.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .product-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .product-details h4 {
+            color: #2a5298;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .detail-value {
+            color: #6c757d;
+            max-width: 60%;
+            word-break: break-all;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .network-info {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .qr-display {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .qr-display img {
+            max-width: 200px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 Blockchain Counterfeit Detection</h1>
+            <p>Prototype - Connect Wallet & Test Smart Contract</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Wallet Connection Section -->
+            <div class="wallet-section">
+                <div id="walletStatus" class="wallet-status disconnected">
+                    🔴 Wallet Not Connected
+                </div>
+                <div id="walletAddress" style="color: #6c757d; margin-bottom: 20px;"></div>
+                <button id="connectWallet" class="btn" onclick="connectWallet()">
+                    Connect MetaMask Wallet
+                </button>
+                <button id="disconnectWallet" class="btn" onclick="disconnectWallet()" style="display: none;">
+                    Disconnect Wallet
+                </button>
+            </div>
+
+            <!-- Network Info -->
+            <div id="networkInfo" class="network-info" style="display: none;">
+                <strong>Network:</strong> <span id="networkName"></span> | 
+                <strong>Chain ID:</strong> <span id="chainId"></span>
+            </div>
+
+            <!-- Smart Contract Section -->
+            <div class="section">
+                <h3>📝 Register Product (Manufacturer)</h3>
+                <div class="form-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" id="productName" placeholder="Enter product name (e.g., iPhone 15 Pro)">
+                </div>
+                <div class="form-group">
+                    <label for="brandName">Brand Name</label>
+                    <input type="text" id="brandName" placeholder="Enter brand name (e.g., Apple)">
+                </div>
+                <div class="form-group">
+                    <label for="batchNumber">Batch Number</label>
+                    <input type="text" id="batchNumber" placeholder="Enter batch number (e.g., BATCH-2024-001)">
+                </div>
+                <button class="btn" onclick="registerProduct()" id="registerBtn" disabled>
+                    Register Product on Blockchain
+                </button>
+                <div id="registerResult"></div>
+            </div>
+
+            <!-- Product Verification Section -->
+            <div class="section">
+                <h3>🔍 Verify Product (Consumer)</h3>
+                <div class="form-group">
+                    <label for="productId">Product ID</label>
+                    <input type="text" id="productId" placeholder="Enter product ID to verify">
+                </div>
+                <button class="btn" onclick="verifyProduct()" id="verifyBtn" disabled>
+                    Verify Product Authenticity
+                </button>
+                <div id="verifyResult"></div>
+            </div>
+
+            <!-- Mock Blockchain Data Section -->
+            <div class="section">
+                <h3>📊 Blockchain Data (Mock)</h3>
+                <p style="color: #6c757d; margin-bottom: 20px;">
+                    This section simulates blockchain interactions. In a real implementation, this would connect to an actual smart contract.
+                </p>
+                <button class="btn" onclick="showMockData()">
+                    Show Mock Blockchain Data
+                </button>
+                <div id="mockDataResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let web3;
+        let userAccount;
+        let isConnected = false;
+        
+        // Mock blockchain data for demonstration
+        const mockProducts = {
+            "PROD-001": {
+                name: "iPhone 15 Pro",
+                brand: "Apple",
+                batchNumber: "BATCH-2024-001",
+                manufacturer: "0x1234...5678",
+                productionDate: "2024-01-15",
+                isActive: true,
+                verificationCount: 12
+            },
+            "PROD-002": {
+                name: "Galaxy S24 Ultra",
+                brand: "Samsung",
+                batchNumber: "BATCH-2024-002",
+                manufacturer: "0x8765...4321",
+                productionDate: "2024-02-20",
+                isActive: true,
+                verificationCount: 8
+            }
+        };
+
+        // Check if MetaMask is installed
+        window.addEventListener('load', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                console.log('MetaMask is installed!');
+                
+                // Check if already connected
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    userAccount = accounts[0];
+                    updateWalletUI(true);
+                    await getNetworkInfo();
+                }
+            } else {
+                showResult('registerResult', 'Please install MetaMask to use this application!', 'error');
+            }
+        });
+
+        // Connect to MetaMask
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    showLoading('connectWallet');
+                    
+                    // Request account access
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    userAccount = accounts[0];
+                    
+                    updateWalletUI(true);
+                    await getNetworkInfo();
+                    
+                    showResult('registerResult', '✅ Wallet connected successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error connecting to MetaMask:', error);
+                    showResult('registerResult', 'Failed to connect wallet: ' + error.message, 'error');
+                } finally {
+                    hideLoading('connectWallet');
+                }
+            } else {
+                showResult('registerResult', 'Please install MetaMask!', 'error');
+            }
+        }
+
+        // Disconnect wallet
+        function disconnectWallet() {
+            userAccount = null;
+            updateWalletUI(false);
+            showResult('registerResult', '❌ Wallet disconnected', 'warning');
+        }
+
+        // Update wallet UI
+        function updateWalletUI(connected) {
+            const walletStatus = document.getElementById('walletStatus');
+            const walletAddress = document.getElementById('walletAddress');
+            const connectBtn = document.getElementById('connectWallet');
+            const disconnectBtn = document.getElementById('disconnectWallet');
+            const registerBtn = document.getElementById('registerBtn');
+            const verifyBtn = document.getElementById('verifyBtn');
+            
+            if (connected) {
+                walletStatus.textContent = '🟢 Wallet Connected';
+                walletStatus.className = 'wallet-status connected';
+                walletAddress.textContent = `Address: ${userAccount}`;
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-block';
+                registerBtn.disabled = false;
+                verifyBtn.disabled = false;
+                isConnected = true;
+            } else {
+                walletStatus.textContent = '🔴 Wallet Not Connected';
+                walletStatus.className = 'wallet-status disconnected';
+                walletAddress.textContent = '';
+                connectBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'none';
+                registerBtn.disabled = true;
+                verifyBtn.disabled = true;
+                isConnected = false;
+                document.getElementById('networkInfo').style.display = 'none';
+            }
+        }
+
+        // Get network information
+        async function getNetworkInfo() {
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const networkMap = {
+                    '0x1': 'Ethereum Mainnet',
+                    '0x89': 'Polygon Mainnet',
+                    '0x13881': 'Polygon Mumbai Testnet',
+                    '0xa86a': 'Avalanche Mainnet',
+                    '0x38': 'Binance Smart Chain'
+                };
+                
+                const networkName = networkMap[chainId] || 'Unknown Network';
+                
+                document.getElementById('networkName').textContent = networkName;
+                document.getElementById('chainId').textContent = chainId;
+                document.getElementById('networkInfo').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error getting network info:', error);
+            }
+        }
+
+        // Register product (Mock implementation)
+        async function registerProduct() {
+            if (!isConnected) {
+                showResult('registerResult', 'Please connect your wallet first!', 'error');
+                return;
+            }
+            
+            const productName = document.getElementById('productName').value;
+            const brandName = document.getElementById('brandName').value;
+            const batchNumber = document.getElementById('batchNumber').value;
+            
+            if (!productName || !brandName || !batchNumber) {
+                showResult('registerResult', 'Please fill in all fields!', 'error');
+                return;
+            }
+            
+            try {
+                showLoading('registerBtn');
+                
+                // Simulate blockchain transaction
+                await simulateBlockchainTransaction(2000);
+                
+                // Generate product ID
+                const productId = 'PROD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+                
+                // Add to mock data
+                mockProducts[productId] = {
+                    name: productName,
+                    brand: brandName,
+                    batchNumber: batchNumber,
+                    manufacturer: userAccount,
+                    productionDate: new Date().toISOString().split('T')[0],
+                    isActive: true,
+                    verificationCount: 0
+                };
+                
+                const result = `
+                    <div class="result success">
+                        <h4>✅ Product Registered Successfully!</h4>
+                        <div class="product-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Product ID:</span>
+                                <span class="detail-value">${productId}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Transaction Hash:</span>
+                                <span class="detail-value">0x${Math.random().toString(16).substr(2, 64)}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Gas Used:</span>
+                                <span class="detail-value">45,231 gas</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Block Number:</span>
+                                <span class="detail-value">${Math.floor(Math.random() * 1000000) + 18000000}</span>
+                            </div>
+                        </div>
+                        <div class="qr-display">
+                            <p><strong>QR Code for Product:</strong></p>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 10px;">
+                                <p style="font-family: monospace; font-size: 0.9em; color: #6c757d;">
+                                    {"productId":"${productId}","contract":"0x1234...5678","network":"polygon-mumbai"}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('registerResult').innerHTML = result;
+                
+                // Clear form
+                document.getElementById('productName').value = '';
+                document.getElementById('brandName').value = '';
+                document.getElementById('batchNumber').value = '';
+                
+            } catch (error) {
+                showResult('registerResult', 'Registration failed: ' + error.message, 'error');
+            } finally {
+                hideLoading('registerBtn');
+            }
+        }
+
+        // Verify product (Mock implementation)
+        async function verifyProduct() {
+            if (!isConnected) {
+                showResult('verifyResult', 'Please connect your wallet first!', 'error');
+                return;
+            }
+            
+            const productId = document.getElementById('productId').value;
+            
+            if (!productId) {
+                showResult('verifyResult', 'Please enter a product ID!', 'error');
+                return;
+            }
+            
+            try {
+                showLoading('verifyBtn');
+                
+                // Simulate blockchain query
+                await simulateBlockchainTransaction(1500);
+                
+                const product = mockProducts[productId];
+                
+                if (!product) {
+                    const result = `
+                        <div class="result error">
+                            <h4>❌ COUNTERFEIT PRODUCT DETECTED!</h4>
+                            <p>Product ID "${productId}" not found in blockchain registry.</p>
+                            <p><strong>This product is not authentic.</strong></p>
+                        </div>
+                    `;
+                    document.getElementById('verifyResult').innerHTML = result;
+                    return;
+                }
+                
+                if (!product.isActive) {
+                    const result = `
+                        <div class="result error">
+                            <h4>⚠️ PRODUCT RECALLED</h4>
+                            <p>Product found but has been deactivated/recalled.</p>
+                            <p><strong>Do not use this product.</strong></p>
+                        </div>
+                    `;
+                    document.getElementById('verifyResult').innerHTML = result;
+                    return;
+                }
+                
+                // Increment verification count
+                product.verificationCount++;
+                
+                const result = `
+                    <div class="result success">
+                        <h4>✅ AUTHENTIC PRODUCT VERIFIED!</h4>
+                        <div class="product-details">
+                            <h4>Product Information:</h4>
+                            <div class="detail-item">
+                                <span class="detail-label">Product Name:</span>
+                                <span class="detail-value">${product.name}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Brand:</span>
+                                <span class="detail-value">${product.brand}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Batch Number:</span>
+                                <span class="detail-value">${product.batchNumber}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Manufacturer:</span>
+                                <span class="detail-value">${product.manufacturer}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Production Date:</span>
+                                <span class="detail-value">${product.productionDate}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Verification Count:</span>
+                                <span class="detail-value">${product.verificationCount}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Status:</span>
+                                <span class="detail-value" style="color: #28a745; font-weight: bold;">AUTHENTIC ✅</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('verifyResult').innerHTML = result;
+                
+            } catch (error) {
+                showResult('verifyResult', 'Verification failed: ' + error.message, 'error');
+            } finally {
+                hideLoading('verifyBtn');
+            }
+        }
+
+        // Show mock blockchain data
+        function showMockData() {
+            const mockData = `
+                <div class="result success">
+                    <h4>📊 Mock Blockchain Registry</h4>
+                    <div class="product-details">
+                        <h4>Registered Products:</h4>
+                        ${Object.entries(mockProducts).map(([id, product]) => `
+                            <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                                <strong>Product ID:</strong> ${id}<br>
+                                <strong>Name:</strong> ${product.name}<br>
+                                <strong>Brand:</strong> ${product.brand}<br>
+                                <strong>Status:</strong> ${product.isActive ? '✅ Active' : '❌ Inactive'}<br>
+                                <strong>Verifications:</strong> ${product.verificationCount}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                        <strong>Blockchain Stats:</strong><br>
+                        📦 Total Products: ${Object.keys(mockProducts).length}<br>
+                        🔍 Total Verifications: ${Object.values(mockProducts).reduce((sum, p) => sum + p.verificationCount, 0)}<br>
+                        ⛓️ Network: Polygon Mumbai Testnet<br>
+                        💰 Gas Price: 30 gwei
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('mockDataResult').innerHTML = mockData;
+        }
+
+        // Utility functions
+        function showLoading(buttonId) {
+            const button = document.getElementById(buttonId);
+            button.innerHTML = '<span class="loading"></span>' + button.textContent;
+            button.disabled = true;
+        }
+
+        function hideLoading(buttonId) {
+            const button = document.getElementById(buttonId);
+            button.innerHTML = button.textContent.replace('Connect MetaMask Wallet', 'Connect MetaMask Wallet')
+                .replace('Register Product on Blockchain', 'Register Product on Blockchain')
+                .replace('Verify Product Authenticity', 'Verify Product Authenticity');
+            button.disabled = false;
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        function simulateBlockchainTransaction(delay) {
+            return new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        // Listen for account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length > 0) {
+                    userAccount = accounts[0];
+                    updateWalletUI(true);
+                } else {
+                    updateWalletUI(false);
+                }
+            });
+
+            window.ethereum.on('chainChanged', (chainId) => {
+                getNetworkInfo();
+            });
+        }
+    </script>
+</body>
+</html>
